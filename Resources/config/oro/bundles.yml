@@ -1,0 +1,2 @@
+bundles:
+    - { name: Trustify\Bundle\MassUpdateBundle\TrustifyMassUpdateBundle, priority: 200 }

@@ -1,0 +1,25 @@
+{% form_theme form 'TrustifyMassUpdateBundle:Include:fields.html.twig' %}
+
+{% if selectedField %}
+    {{ form_errors(form) }}
+    {{ form_widget(form) }}
+{% else %}
+<div class="widget-content">
+    <form type="GET" action="">
+    <div class="widget-actions">
+        <button class="btn btn-mini btn-primary btn-uppercase" type="submit" style="display: none;"
+                data-action-name="submit">
+            {{ 'Perform'|trans }}
+        </button>
+    </div>
+
+    {{ form_widget(form) }}
+
+    {% set options = {
+        'mainElementId': '#' ~ form.vars.id
+    } %}
+
+    <div class="mass-update-input-container"></div>
+    </form>
+</div>
+{% endif %}

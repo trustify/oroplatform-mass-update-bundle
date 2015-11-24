@@ -1,0 +1,4 @@
+trustify_mass_update_bundle:
+    resource:     "@TrustifyMassUpdateBundle/Controller/MassUpdateController.php"
+    type:         annotation
+    prefix:       mass-update

@@ -1,0 +1,31 @@
+parameters: ~
+
+# to override services - use CompilerPass approach
+services:
+    trustify_mass_update.mass_action.update_handler:
+        class: Trustify\Bundle\MassUpdateBundle\Datagrid\MassAction\MassUpdateActionHandler
+        arguments:
+            - @oro_entity.doctrine_helper
+
+    trustify_mass_update.event_listener.grid_listener:
+        class: Trustify\Bundle\MassUpdateBundle\Datagrid\GridListener
+        arguments:
+            - @oro_entity.orm.entity_class_resolver
+            - @oro_entity.doctrine_helper
+        tags:
+            - { name: kernel.event_listener, event: oro_datagrid.datagrid.build.before, method: onBuildBefore }
+
+    trustify_mass_update.type.guess_field_type:
+        class: Trustify\Bundle\MassUpdateBundle\Form\Type\GuessFieldType
+        arguments:
+            - @oro_entity_merge.listener.metadata.entity_config.helper
+            - @trustify_mass_update.form.guesser.regular_field
+        tags:
+            - { name: form.type, alias: guess_field_type }
+
+    # it's intensionally not registered with a tag
+    trustify_mass_update.form.guesser.regular_field:
+        parent: oro_entity_extend.form.guesser.extend_field
+        class: Trustify\Bundle\MassUpdateBundle\Form\Guesser\RegularFieldTypeGuesser
+        calls:
+            - [setFieldProvider, [@oro_entity.entity_field_provider]]

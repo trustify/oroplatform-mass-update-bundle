@@ -1,4 +1,3 @@
 config:
     paths:
-        'trustifymassupdate/js/app/components/dependable-ajax-component': 'bundles/trustifymassupdate/js/app/components/dependable-ajax-component.js'
         'oro/datagrid/action/update-mass-action': 'bundles/trustifymassupdate/js/datagrid/action/update-mass-action.js'

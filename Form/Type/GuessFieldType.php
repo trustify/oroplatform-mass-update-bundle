@@ -9,6 +9,7 @@ use Symfony\Component\OptionsResolver\Exception\InvalidOptionsException;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 use Oro\Bundle\EntityMergeBundle\EventListener\Metadata\EntityConfigHelper;
+
 use Trustify\Bundle\MassUpdateBundle\Form\Guesser\RegularFieldTypeGuesser;
 
 /**

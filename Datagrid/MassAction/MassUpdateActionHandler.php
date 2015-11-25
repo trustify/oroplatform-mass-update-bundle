@@ -2,9 +2,12 @@
 
 namespace Trustify\Bundle\MassUpdateBundle\Datagrid\MassAction;
 
+use Symfony\Component\Translation\TranslatorInterface;
+
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 
+use Oro\Bundle\SecurityBundle\SecurityFacade;
 use Oro\Bundle\DataGridBundle\Datagrid\DatagridInterface;
 use Oro\Bundle\DataGridBundle\Datasource\Orm\OrmDatasource;
 use Oro\Bundle\DataGridBundle\Datasource\ResultRecordInterface;
@@ -12,6 +15,7 @@ use Oro\Bundle\DataGridBundle\Extension\MassAction\MassActionHandlerArgs;
 use Oro\Bundle\DataGridBundle\Extension\MassAction\MassActionHandlerInterface;
 use Oro\Bundle\DataGridBundle\Extension\MassAction\MassActionResponse;
 use Oro\Bundle\EntityBundle\ORM\DoctrineHelper;
+use Oro\Bundle\EntityConfigBundle\Provider\ConfigProviderInterface;
 
 class MassUpdateActionHandler implements MassActionHandlerInterface
 {
@@ -32,12 +36,31 @@ class MassUpdateActionHandler implements MassActionHandlerInterface
     /** @var string */
     protected $entityName;
 
+    /** @var ConfigProviderInterface */
+    protected $gridConfigProvider;
+
+    /** @var TranslatorInterface */
+    protected $translator;
+
+    /** @var SecurityFacade */
+    protected $securityFacade;
+
     /**
-     * @param DoctrineHelper $doctrineHelper
+     * @param DoctrineHelper          $doctrineHelper
+     * @param ConfigProviderInterface $gridConfigProvider
+     * @param TranslatorInterface     $translator
+     * @param SecurityFacade          $securityFacade
      */
-    public function __construct(DoctrineHelper $doctrineHelper)
-    {
+    public function __construct(
+        DoctrineHelper $doctrineHelper,
+        ConfigProviderInterface $gridConfigProvider,
+        TranslatorInterface $translator,
+        SecurityFacade $securityFacade
+    ) {
         $this->doctrineHelper = $doctrineHelper;
+        $this->gridConfigProvider = $gridConfigProvider;
+        $this->translator = $translator;
+        $this->securityFacade = $securityFacade;
     }
 
     /**
@@ -60,7 +83,7 @@ class MassUpdateActionHandler implements MassActionHandlerInterface
 
             $entityName = reset($rootEntities);
         } elseif (!empty($fromItems)) {
-            // datagrid not built yet
+            // grid not built yet
             $entityName = empty($fromItems[0]['table']) ? null : $fromItems[0]['table'];
         }
 
@@ -79,11 +102,27 @@ class MassUpdateActionHandler implements MassActionHandlerInterface
     }
 
     /**
+     * @return bool
+     */
+    protected function isMassActionEnabled()
+    {
+        if ($this->gridConfigProvider->hasConfig($this->entityName)) {
+            return $this->gridConfigProvider->getConfig($this->entityName)->is('update_mass_action_enabled');
+        } else {
+            // disable mass action by default for not configurable entities
+            return false;
+        }
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function handle(MassActionHandlerArgs $args)
     {
         $this->initAction($args->getDatagrid());
+        if (!$this->isMassActionEnabled()) {
+            return $this->getResponse($args, 0, 'not configured');
+        }
 
         $fieldName   = $args->getData()['mass_edit_field'];
         $value       = $args->getData()[$fieldName];
@@ -93,6 +132,10 @@ class MassUpdateActionHandler implements MassActionHandlerInterface
         $iteration     = 0;
         $results       = $args->getResults();
 
+        if (!$this->securityFacade->isGranted('EDIT', 'entity:' . $this->entityName)) {
+            return $this->getResponse($args, $entitiesCount, 'not allowed to modify the entity');
+        }
+
         // batch should be processed in transaction
         $this->entityManager->beginTransaction();
         try {
@@ -100,7 +143,6 @@ class MassUpdateActionHandler implements MassActionHandlerInterface
             set_time_limit(0);
 
             foreach ($results as $result) {
-                // TODO: perform ACL check for entity update
                 /** @var $result ResultRecordInterface */
                 $selectedIds[] = $result->getValue($this->identifierName);
 
@@ -121,28 +163,26 @@ class MassUpdateActionHandler implements MassActionHandlerInterface
             throw $e;
         }
 
-
         return $this->getResponse($args, $entitiesCount);
     }
 
     /**
      * @param MassActionHandlerArgs $args
      * @param int                   $entitiesCount
+     * @param string                $error
      *
      * @return MassActionResponse
      */
-    protected function getResponse(MassActionHandlerArgs $args, $entitiesCount)
+    protected function getResponse(MassActionHandlerArgs $args, $entitiesCount, $error = null)
     {
         $options = $args->getMassAction()->getOptions()->toArray();
 
         $successful = $entitiesCount > 0;
-        $options    = ['count' => $entitiesCount];
+        $message    = $successful ?
+            $this->translator->trans($options['success_message'], ['%items%' => $entitiesCount]) :
+            $this->translator->trans($options['error_message'], ['%error%' => $error]);
 
-        return new MassActionResponse(
-            $successful,
-            'Well done :)',
-            $options
-        );
+        return new MassActionResponse($successful, $message);
     }
 
     /**

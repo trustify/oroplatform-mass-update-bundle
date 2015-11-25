@@ -4,12 +4,14 @@ namespace Trustify\Bundle\MassUpdateBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Security\Acl\Voter\FieldVote;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 
-use Oro\Bundle\EntityBundle\Form\Type\EntityFieldChoiceType;
 use Trustify\Bundle\MassUpdateBundle\Form\Type\GuessFieldType;
+use Trustify\Bundle\MassUpdateBundle\Form\Type\UpdateFieldChoiceType;
 
 class MassUpdateController extends Controller
 {
@@ -26,30 +28,29 @@ class MassUpdateController extends Controller
         $entityName    = str_replace('_', '\\', $request->get('entityName'));
         $selectedField = $request->get('selectedFormField');
 
+        if (!$this->get('oro_security.security_facade')->isGranted('EDIT', 'entity:' . $entityName)) {
+            throw new AccessDeniedException();
+        }
+
         if ($selectedField) {
-            // TODO: perform ACL check: if entity is allowed to be viewed
+            // uncomment this after oro platform will support field level acl
+            //$this->checkFieldAccess($entityName, $selectedField);
 
-            // TODO: implement field filter to allow only plain text/date/int fields and many-to-one rels
-            // otherwise it's hard to guess field type
-            // or fallback to plain text field
-
-            // TODO: add settings to enable/attach to some grid
-            // TODO: develop isApplied check to bypass grids that doesn't have all the params
-
-
-            $form = $this->get('form.factory')->create(
+            $form = $this->get('form.factory')->createNamed(
+                '',
                 GuessFieldType::NAME,
                 null,
-                ['data_class' => $entityName, 'field_name' => $selectedField]
+                [
+                    'data_class'              => $entityName,
+                    'field_name'              => $selectedField,
+                    'dynamic_fields_disabled' => true,
+                    'ownership_disabled'      => true
+                ]
             );
-
-            // TODO: check why it's building all the fields
-            $form = $form->get($selectedField);
-
         } else {
             $form = $this->get('form.factory')->createNamed(
                 'mass_edit_field',
-                EntityFieldChoiceType::NAME,
+                UpdateFieldChoiceType::NAME,
                 null,
                 [
                     'entity'         => $entityName,
@@ -62,5 +63,25 @@ class MassUpdateController extends Controller
             'form'          => $form->createView(),
             'selectedField' => $selectedField,
         ];
+    }
+
+    /**
+     * @param string $entityName
+     * @param string $fieldName
+     *
+     * @throws AccessDeniedException
+     */
+    protected function checkFieldAccess($entityName, $fieldName)
+    {
+        if (!$this->get('oro_security.security_facade')->isGranted(
+            'EDIT',
+            new FieldVote(
+                $this->get('oro_entity.doctrine_helper')->createEntityInstance($entityName),
+                $fieldName
+            )
+        )
+        ) {
+            throw new AccessDeniedException();
+        }
     }
 }

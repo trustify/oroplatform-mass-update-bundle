@@ -2,12 +2,19 @@
 
 namespace Trustify\Bundle\MassUpdateBundle\Datagrid;
 
+use Symfony\Component\Translation\TranslatorInterface;
+
 use Oro\Bundle\DataGridBundle\Event\BuildBefore;
 use Oro\Bundle\EntityBundle\ORM\DoctrineHelper;
 use Oro\Bundle\EntityBundle\ORM\EntityClassResolver;
+use Oro\Bundle\EntityConfigBundle\Provider\ConfigProviderInterface;
 
 use Trustify\Bundle\MassUpdateBundle\Datagrid\MassAction\MassUpdateActionHandler;
 
+/**
+ * Add update mass action to entity grids
+ * for entities that has update_mass_action_enabled flag enabled
+ */
 class GridListener
 {
     const ACTION_CONFIGURATION_KEY = '[mass_actions][%s]';
@@ -19,16 +26,30 @@ class GridListener
     protected $entityClassResolver;
 
     /** @var DoctrineHelper */
-    private $doctrineHelper;
+    protected $doctrineHelper;
+
+    /** @var ConfigProviderInterface */
+    protected $gridConfigProvider;
+
+    /** @var TranslatorInterface */
+    protected $translator;
 
     /**
-     * @param EntityClassResolver $classResolver
-     * @param DoctrineHelper      $doctrineHelper
+     * @param EntityClassResolver     $classResolver
+     * @param DoctrineHelper          $doctrineHelper
+     * @param ConfigProviderInterface $gridConfigProvider
+     * @param TranslatorInterface     $translator
      */
-    public function __construct(EntityClassResolver $classResolver, DoctrineHelper $doctrineHelper)
-    {
+    public function __construct(
+        EntityClassResolver $classResolver,
+        DoctrineHelper $doctrineHelper,
+        ConfigProviderInterface $gridConfigProvider,
+        TranslatorInterface $translator
+    ) {
         $this->entityClassResolver = $classResolver;
         $this->doctrineHelper      = $doctrineHelper;
+        $this->gridConfigProvider  = $gridConfigProvider;
+        $this->translator          = $translator;
     }
 
     /**
@@ -39,11 +60,17 @@ class GridListener
     protected function isApplicable(BuildBefore $event)
     {
         $this->entityName = MassUpdateActionHandler::getEntityNameFromDatagrid($event->getDatagrid());
-
         try {
             $isEntity = $this->entityClassResolver->isEntity($this->entityName);
         } catch (\Exception $e) {
             $isEntity = false;
+        }
+
+        if ($this->gridConfigProvider->hasConfig($this->entityName)) {
+            $isEnabled = $this->gridConfigProvider->getConfig($this->entityName)->is('update_mass_action_enabled');
+        } else {
+            // disable mass action by default for not configurable entities
+            $isEnabled = false;
         }
 
         $isNotConfigured = $event->getConfig()->offsetGetByPath(
@@ -51,10 +78,7 @@ class GridListener
             true
         );
 
-        // TODO: check if mass action enabled for the grid and entityName
-        $gridName = $event->getDatagrid()->getName();
-
-        return $isNotConfigured && $isEntity;
+        return $isNotConfigured && $isEntity && $isEnabled;
     }
 
     /**
@@ -77,12 +101,14 @@ class GridListener
                     'route'            => 'trustify_mass_update',
                     'route_parameters' => ['entityName' => str_replace('\\', '_', $this->entityName)],
                 ],
-                'data_identifier'     => 'e.' . $this->doctrineHelper->getSingleEntityIdentifierFieldName(
+                'data_identifier'     => 'e.'.$this->doctrineHelper->getSingleEntityIdentifierFieldName(
                     $this->entityName
                 ),
                 'handler'             => MassUpdateActionHandler::SERVICE_ID,
-                // TODO: translate
-                'label'               => 'Bulk Edit',
+                // TODO: ensure label used on frontend
+                'label'               => $this->translator->trans('trustify.mass_update.dialog.title'),
+                'success_message'     => 'trustify.mass_update.success_message',
+                'error_message'       => 'trustify.mass_update.error_message',
             ]
         );
     }

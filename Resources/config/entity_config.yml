@@ -1,0 +1,14 @@
+oro_entity_config:
+    datagrid:
+        entity:
+            items:
+                update_mass_action_enabled:
+                    options:
+                        default_value:      false
+                        indexed:            true
+                    form:
+                        type:               checkbox
+                        options:
+                            block:          other
+                            required:       false
+                            label:          trustify.mass_update.entity_config.action.is_enabled.label

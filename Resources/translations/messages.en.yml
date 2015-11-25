@@ -1,0 +1,6 @@
+trustify:
+    mass_update:
+        entity_config.action.is_enabled.label: "Is mass update action enabled?"
+        dialog.title:                          "Bulk Edit"
+        success_message:                       "Action performed sucessfully, %items% updated."
+        error_message:                         "Failed to update, reason: %error%"

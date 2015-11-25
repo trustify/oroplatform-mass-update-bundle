@@ -6,12 +6,17 @@ services:
         class: Trustify\Bundle\MassUpdateBundle\Datagrid\MassAction\MassUpdateActionHandler
         arguments:
             - @oro_entity.doctrine_helper
+            - @oro_entity_config.provider.datagrid
+            - @translator
+            - @oro_security.security_facade
 
     trustify_mass_update.event_listener.grid_listener:
         class: Trustify\Bundle\MassUpdateBundle\Datagrid\GridListener
         arguments:
             - @oro_entity.orm.entity_class_resolver
             - @oro_entity.doctrine_helper
+            - @oro_entity_config.provider.datagrid
+            - @translator
         tags:
             - { name: kernel.event_listener, event: oro_datagrid.datagrid.build.before, method: onBuildBefore }
 
@@ -29,3 +34,9 @@ services:
         class: Trustify\Bundle\MassUpdateBundle\Form\Guesser\RegularFieldTypeGuesser
         calls:
             - [setFieldProvider, [@oro_entity.entity_field_provider]]
+
+    trustify_mass_update.form.type.update_field_choice:
+        parent: oro_entity.form.type.entity_field_choice
+        class: Trustify\Bundle\MassUpdateBundle\Form\Type\UpdateFieldChoiceType
+        tags:
+            - { name: form.type, alias: update_field_choice }

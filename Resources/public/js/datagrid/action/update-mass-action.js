@@ -150,6 +150,7 @@ define([
             });
 
             var self = this;
+            var pageComponent = selectedItem;
             $.get(url)
                 .done(function (data, code, response) {
                     if (code == 'success') {
@@ -159,6 +160,7 @@ define([
 
                         actionBtn.show();
 
+                        self.dialogWidget.removePageComponent(pageComponent);
                         self.dialogWidget.initPageComponents();
                         $(self.dialogInputContainer)
                             .find('select:not(.no-uniform,.select2)').uniform({selectAutoWidth: false});

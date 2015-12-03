@@ -1,0 +1,23 @@
+trustify_mass_update:
+    # Name based mapping used to set form type and options to use
+    # for rendering updateable field, used only for mass action dialog window
+    mapping:
+        # For any entity, match by field name only
+        all:
+            assignedTo:
+                type: oro_user_organization_acl_select
+                options:
+                    label: orocrm.case.caseentity.assigned_to.label
+
+        # Entity - specific mapping
+        OroCRM\Bundle\ContactBundle\Entity\Contact:
+            relatedContact:
+                type: orocrm_contact_select
+                options:
+                    label: orocrm.case.caseentity.related_contact.label
+
+        OroCRM\Bundle\CaseBundle\Entity\CaseEntity:
+            relatedAccount:
+                type: orocrm_account_select
+                options:
+                    label: orocrm.case.caseentity.related_account.label

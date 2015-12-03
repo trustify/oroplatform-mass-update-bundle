@@ -34,6 +34,8 @@ services:
         class: Trustify\Bundle\MassUpdateBundle\Form\Guesser\RegularFieldTypeGuesser
         calls:
             - [setFieldProvider, [@oro_entity.entity_field_provider]]
+            # to support *-to-one system relations
+            - [addExtendTypeMapping, ["ref-one", "entity"]]
 
     trustify_mass_update.form.type.update_field_choice:
         parent: oro_entity.form.type.entity_field_choice

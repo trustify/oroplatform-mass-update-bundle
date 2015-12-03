@@ -28,10 +28,17 @@ class GuessFieldType extends AbstractType
     /** @var RegularFieldTypeGuesser */
     protected $guesser;
 
-    public function __construct(EntityConfigHelper $entityConfigHelper, FormTypeGuesserInterface $guesser)
-    {
+    /** @var array */
+    protected $mapping;
+
+    public function __construct(
+        EntityConfigHelper $entityConfigHelper,
+        FormTypeGuesserInterface $guesser,
+        array $mapping = []
+    ) {
         $this->entityConfigHelper = $entityConfigHelper;
         $this->guesser = $guesser;
+        $this->mapping = $mapping;
     }
 
 
@@ -92,32 +99,26 @@ class GuessFieldType extends AbstractType
         $fieldOptions = ['label' => ''];
 
         // chance to guess by names
-        switch (true) {
-            // no break to fall further
-            case $fieldName == 'relatedAccount':
-                $type = 'orocrm_account_select';
-                $fieldOptions['label'] = 'orocrm.case.caseentity.related_account.label';
-                break;
-
-            case $fieldName == 'relatedContact':
-                $type = 'orocrm_contact_select';
-                $fieldOptions['label'] = 'orocrm.case.caseentity.related_contact.label';
-                break;
-
-            case $fieldName == 'assignedTo':
-                $type = 'oro_user_organization_acl_select';
-                $fieldOptions['label'] = 'orocrm.case.caseentity.assigned_to.label';
-                break;
+        if (isset($this->mapping['all'][$fieldName])) {
+            $map          = $this->mapping['all'][$fieldName];
+            $type         = $map['type'];
+            $fieldOptions = $map['options'];
         }
 
-        // try to guess type and options for to-one relations
-        $this->guesser->addExtendTypeMapping('ref-one', 'entity');
-        $guess = $this->guesser->guessType($className, $fieldName);
-        if ($guess && !$type) {
-            $type = $guess->getType();
-            $fieldOptions = $guess->getOptions();
+        // if more specific map rule exists
+        if (isset($this->mapping[$className][$fieldName])) {
+            $map          = $this->mapping[$className][$fieldName];
+            $type         = $map['type'];
+            $fieldOptions = $map['options'];
         }
 
+        if (is_null($type)) {
+            $guess = $this->guesser->guessType($className, $fieldName);
+            if ($guess) {
+                $type = $guess->getType();
+                $fieldOptions = $guess->getOptions();
+            }
+        }
 
         return [$type, $fieldOptions];
     }

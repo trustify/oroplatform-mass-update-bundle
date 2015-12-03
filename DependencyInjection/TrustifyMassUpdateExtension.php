@@ -9,6 +9,8 @@ use Symfony\Component\DependencyInjection\Loader;
 
 class TrustifyMassUpdateExtension extends Extension
 {
+    const FIELD_TYPE_SERVICE = 'trustify_mass_update.type.guess_field_type';
+
     /**
      * {@inheritDoc}
      */
@@ -21,5 +23,8 @@ class TrustifyMassUpdateExtension extends Extension
         $loader->load('services.yml');
 
         $container->prependExtensionConfig($this->getAlias(), array_intersect_key($config, array_flip(['settings'])));
+
+        $container->getDefinition(self::FIELD_TYPE_SERVICE)
+            ->addArgument($config['mapping']);
     }
 }

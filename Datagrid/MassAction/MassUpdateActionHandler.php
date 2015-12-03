@@ -66,47 +66,36 @@ class MassUpdateActionHandler implements MassActionHandlerInterface
     /**
      * @param DatagridInterface $datagrid
      *
-     * @return string first root entity
-     */
-    public static function getEntityNameFromDatagrid(DatagridInterface $datagrid)
-    {
-        $entityName = null;
-        $fromItems = $datagrid->getConfig()->offsetGetByPath('[source][query][from]', false);
-
-        /** @var OrmDatasource $dataSource */
-        $dataSource = $datagrid->getDatasource();
-        if ($dataSource) {
-            /** @var QueryBuilder $queryBuilder */
-            $queryBuilder = $dataSource->getQueryBuilder();
-            $rootEntities = $queryBuilder->getRootEntities();
-
-            $entityName = reset($rootEntities);
-        } elseif (!empty($fromItems)) {
-            // grid not built yet
-            $entityName = empty($fromItems[0]['table']) ? null : $fromItems[0]['table'];
-        }
-
-        return $entityName;
-    }
-
-    /**
-     * @param DatagridInterface $datagrid
+     * @return null
      */
     protected function initAction(DatagridInterface $datagrid)
     {
-        $this->entityName = self::getEntityNameFromDatagrid($datagrid);
+        /** @var OrmDatasource $dataSource */
+        $dataSource = $datagrid->getDatasource();
+        if (!$dataSource) {
+            return;
+        }
+
+        /** @var QueryBuilder $queryBuilder */
+        $queryBuilder = $dataSource->getQueryBuilder();
+        $rootEntities = $queryBuilder->getRootEntities();
+
+        $this->entityName = reset($rootEntities);
 
         $this->entityManager  = $this->doctrineHelper->getEntityManager($this->entityName);
         $this->identifierName = $this->doctrineHelper->getSingleEntityIdentifierFieldName($this->entityName);
     }
 
     /**
+     * @param null|string $entityName
+     *
      * @return bool
      */
-    protected function isMassActionEnabled()
+    public function isMassActionEnabled($entityName = null)
     {
-        if ($this->gridConfigProvider->hasConfig($this->entityName)) {
-            return $this->gridConfigProvider->getConfig($this->entityName)->is('update_mass_action_enabled');
+        $entityName = $this->entityName ?: $entityName;
+        if ($entityName && $this->gridConfigProvider->hasConfig($entityName)) {
+            return $this->gridConfigProvider->getConfig($entityName)->is('update_mass_action_enabled');
         } else {
             // disable mass action by default for not configurable entities
             return false;
@@ -120,7 +109,7 @@ class MassUpdateActionHandler implements MassActionHandlerInterface
     {
         $this->initAction($args->getDatagrid());
         if (!$this->isMassActionEnabled()) {
-            return $this->getResponse($args, 0, 'not configured');
+            return $this->getResponse($args, 0, 'Action not configured');
         }
 
         $fieldName   = $args->getData()['mass_edit_field'];

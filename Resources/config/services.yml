@@ -15,8 +15,7 @@ services:
         arguments:
             - @oro_entity.orm.entity_class_resolver
             - @oro_entity.doctrine_helper
-            - @oro_entity_config.provider.datagrid
-            - @translator
+            - @trustify_mass_update.mass_action.update_handler
         tags:
             - { name: kernel.event_listener, event: oro_datagrid.datagrid.build.before, method: onBuildBefore }
 

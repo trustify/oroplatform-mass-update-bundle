@@ -2,10 +2,10 @@
 
 namespace Trustify\Bundle\MassUpdateBundle\Datagrid;
 
+use Oro\Bundle\DataGridBundle\Datagrid\DatagridInterface;
 use Oro\Bundle\DataGridBundle\Event\BuildBefore;
 use Oro\Bundle\EntityBundle\ORM\DoctrineHelper;
 use Oro\Bundle\EntityBundle\ORM\EntityClassResolver;
-use Oro\Bundle\EntityConfigBundle\Provider\ConfigProviderInterface;
 
 use Trustify\Bundle\MassUpdateBundle\Datagrid\MassAction\MassUpdateActionHandler;
 
@@ -16,9 +16,7 @@ use Trustify\Bundle\MassUpdateBundle\Datagrid\MassAction\MassUpdateActionHandler
 class GridListener
 {
     const ACTION_CONFIGURATION_KEY = '[mass_actions][%s]';
-
-    /** @var string */
-    protected $entityName;
+    const FROM_PATH = '[source][query][from]';
 
     /** @var EntityClassResolver */
     protected $entityClassResolver;
@@ -26,51 +24,64 @@ class GridListener
     /** @var DoctrineHelper */
     protected $doctrineHelper;
 
-    /** @var ConfigProviderInterface */
-    protected $gridConfigProvider;
+    /** @var MassUpdateActionHandler */
+    protected $actionHandler;
 
     /**
      * @param EntityClassResolver     $classResolver
      * @param DoctrineHelper          $doctrineHelper
-     * @param ConfigProviderInterface $gridConfigProvider
+     * @param MassUpdateActionHandler $actionHandler
      */
     public function __construct(
         EntityClassResolver $classResolver,
         DoctrineHelper $doctrineHelper,
-        ConfigProviderInterface $gridConfigProvider
+        MassUpdateActionHandler $actionHandler
     ) {
         $this->entityClassResolver = $classResolver;
         $this->doctrineHelper      = $doctrineHelper;
-        $this->gridConfigProvider  = $gridConfigProvider;
+        $this->actionHandler       = $actionHandler;
     }
 
     /**
      * @param BuildBefore $event
+     * @param string      $entityName
      *
      * @return bool
      */
-    protected function isApplicable(BuildBefore $event)
+    protected function isApplicable(BuildBefore $event, $entityName)
     {
-        $this->entityName = MassUpdateActionHandler::getEntityNameFromDatagrid($event->getDatagrid());
+        if (empty($entityName)) {
+            return false;
+        }
+
         try {
-            $isEntity = $this->entityClassResolver->isEntity($this->entityName);
+            $isEntity = $this->entityClassResolver->isEntity($entityName);
         } catch (\Exception $e) {
             $isEntity = false;
         }
 
-        if ($this->gridConfigProvider->hasConfig($this->entityName)) {
-            $isEnabled = $this->gridConfigProvider->getConfig($this->entityName)->is('update_mass_action_enabled');
-        } else {
-            // disable mass action by default for not configurable entities
-            $isEnabled = false;
-        }
-
-        $existsingConfig = $event->getConfig()->offsetGetByPath(
+        $existingConfig = $event->getConfig()->offsetGetByPath(
             sprintf(self::ACTION_CONFIGURATION_KEY, MassUpdateActionHandler::ACTION_NAME),
             false
         );
 
-        return empty($existsingConfig) && $isEntity && $isEnabled;
+        return empty($existingConfig) && $isEntity && $this->actionHandler->isMassActionEnabled($entityName);
+    }
+
+    /**
+     * @param DatagridInterface $datagrid
+     *
+     * @return array
+     */
+    protected function getEntityNameWithAlias(DatagridInterface $datagrid)
+    {
+        $fromItems = $datagrid->getConfig()->offsetGetByPath('[source][query][from]', false);
+
+        if (empty($fromItems[0]['table'])) {
+            return [$datagrid->getParameters()->get('class_name'), null];
+        } else {
+            return [$fromItems[0]['table'], $fromItems[0]['alias']];
+        }
     }
 
     /**
@@ -78,7 +89,12 @@ class GridListener
      */
     public function onBuildBefore(BuildBefore $event)
     {
-        if (!$this->isApplicable($event)) {
+        $datagrid = $event->getDatagrid();
+
+        list ($entityName, $alias) = $this->getEntityNameWithAlias($datagrid);
+        $alias = $alias ? : 'e';
+
+        if (!$this->isApplicable($event, $entityName)) {
             return;
         }
 
@@ -91,10 +107,10 @@ class GridListener
                 'route'               => 'oro_datagrid_mass_action',
                 'dialogWindowOptions' => [
                     'route'            => 'trustify_mass_update',
-                    'route_parameters' => ['entityName' => str_replace('\\', '_', $this->entityName)],
+                    'route_parameters' => ['entityName' => str_replace('\\', '_', $entityName)],
                 ],
-                'data_identifier'     => 'e.'.$this->doctrineHelper
-                        ->getSingleEntityIdentifierFieldName($this->entityName),
+                'data_identifier'     => $alias . '.' . $this->doctrineHelper
+                        ->getSingleEntityIdentifierFieldName($entityName),
                 'handler'             => MassUpdateActionHandler::SERVICE_ID,
                 'label'               => 'trustify.mass_update.dialog.title',
                 'success_message'     => 'trustify.mass_update.success_message',

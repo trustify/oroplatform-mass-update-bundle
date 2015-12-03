@@ -40,5 +40,8 @@ services:
     trustify_mass_update.form.type.update_field_choice:
         parent: oro_entity.form.type.entity_field_choice
         class: Trustify\Bundle\MassUpdateBundle\Form\Type\UpdateFieldChoiceType
+        calls:
+            - [setFormConfigProvider,[@oro_entity_config.provider.form]]
+            - [setDoctrineHelper,[@oro_entity.doctrine_helper]]
         tags:
             - { name: form.type, alias: update_field_choice }

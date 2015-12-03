@@ -9,15 +9,20 @@ trustify_mass_update:
                 options:
                     label: orocrm.case.caseentity.assigned_to.label
 
-        # Entity - specific mapping
-        OroCRM\Bundle\ContactBundle\Entity\Contact:
             relatedContact:
                 type: orocrm_contact_select
                 options:
                     label: orocrm.case.caseentity.related_contact.label
 
-        OroCRM\Bundle\CaseBundle\Entity\CaseEntity:
             relatedAccount:
                 type: orocrm_account_select
                 options:
                     label: orocrm.case.caseentity.related_account.label
+
+#        # Example: Entity - specific mapping
+#        OroCRM\Bundle\CaseBundle\Entity\CaseEntity:
+#            relatedContact:
+#                type: orocrm_contact_select
+#                options:
+#                    label: orocrm.case.caseentity.related_contact.label
+#

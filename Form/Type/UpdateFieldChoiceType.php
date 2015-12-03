@@ -3,11 +3,35 @@
 namespace Trustify\Bundle\MassUpdateBundle\Form\Type;
 
 use Oro\Bundle\EntityBundle\Form\Type\EntityFieldChoiceType;
+use Oro\Bundle\EntityBundle\ORM\DoctrineHelper;
+use Oro\Bundle\EntityConfigBundle\Provider\ConfigProviderInterface;
 use Oro\Bundle\EntityExtendBundle\Extend\RelationType;
 
 class UpdateFieldChoiceType extends EntityFieldChoiceType
 {
     const NAME = 'update_field_choice';
+
+    /** @var ConfigProviderInterface */
+    protected $formConfigProvider;
+
+    /** @var DoctrineHelper */
+    protected $doctrineHelper;
+
+    /**
+     * @param ConfigProviderInterface $formConfigProvider
+     */
+    public function setFormConfigProvider(ConfigProviderInterface $formConfigProvider)
+    {
+        $this->formConfigProvider = $formConfigProvider;
+    }
+
+    /**
+     * @param DoctrineHelper $doctrineHelper
+     */
+    public function setDoctrineHelper(DoctrineHelper $doctrineHelper)
+    {
+        $this->doctrineHelper = $doctrineHelper;
+    }
 
     /**
      * {@inheritdoc}
@@ -17,12 +41,21 @@ class UpdateFieldChoiceType extends EntityFieldChoiceType
         $choiceFields    = [];
         $choiceRelations = [];
 
+        $idFieldNames = $this->doctrineHelper->getEntityIdentifierFieldNames($entityName);
         foreach ($this->getEntityFields($entityName, $withRelations, $withVirtualFields) as $fieldName => $field) {
+            $formConfig = $this->formConfigProvider->getConfig($entityName, $fieldName);
+
+            if ($formConfig->is('is_enabled', false) || in_array($fieldName, $idFieldNames)) {
+                // field is not enabled for displaying in forms
+                // or field is entity identifier
+
+                continue;
+            }
+
             if (!isset($field['relation_type'])) {
-                // TODO: filter fields using entity config (form scope)
                 $choiceFields[$fieldName] = $field['label'];
             } elseif (!in_array($field['relation_type'], RelationType::$toManyRelations)) {
-                // disable mass update for *-to-many relations
+                // enable only mass update for *-to-one relations
                 $choiceRelations[$fieldName] = $field['label'];
             }
         }

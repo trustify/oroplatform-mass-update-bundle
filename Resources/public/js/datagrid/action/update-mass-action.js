@@ -24,7 +24,7 @@ define([
             options: {
                 alias: 'mass-update-widget',
                 dialogOptions: {
-                    title: __('Update item'),
+                    title: null,
                     allowMaximize: false,
                     allowMinimize: false,
                     modal: true,
@@ -70,9 +70,10 @@ define([
                         url: routing.generate(
                             this.dialogWindowOptions.route,
                             this.dialogWindowOptions.route_parameters
-                        )
-                    },
-                    {'submitHandler': this.getSubmitHandler()}
+                        ),
+                        dialogOptions: {label: this.label || __('Update item')},
+                        submitHandler: this.getSubmitHandler()
+                    }
                 ),
                 // perform actual action step
                 second: _.extend(

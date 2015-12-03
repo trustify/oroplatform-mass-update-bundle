@@ -2,8 +2,6 @@
 
 namespace Trustify\Bundle\MassUpdateBundle\Datagrid;
 
-use Symfony\Component\Translation\TranslatorInterface;
-
 use Oro\Bundle\DataGridBundle\Event\BuildBefore;
 use Oro\Bundle\EntityBundle\ORM\DoctrineHelper;
 use Oro\Bundle\EntityBundle\ORM\EntityClassResolver;
@@ -31,25 +29,19 @@ class GridListener
     /** @var ConfigProviderInterface */
     protected $gridConfigProvider;
 
-    /** @var TranslatorInterface */
-    protected $translator;
-
     /**
      * @param EntityClassResolver     $classResolver
      * @param DoctrineHelper          $doctrineHelper
      * @param ConfigProviderInterface $gridConfigProvider
-     * @param TranslatorInterface     $translator
      */
     public function __construct(
         EntityClassResolver $classResolver,
         DoctrineHelper $doctrineHelper,
-        ConfigProviderInterface $gridConfigProvider,
-        TranslatorInterface $translator
+        ConfigProviderInterface $gridConfigProvider
     ) {
         $this->entityClassResolver = $classResolver;
         $this->doctrineHelper      = $doctrineHelper;
         $this->gridConfigProvider  = $gridConfigProvider;
-        $this->translator          = $translator;
     }
 
     /**
@@ -73,12 +65,12 @@ class GridListener
             $isEnabled = false;
         }
 
-        $isNotConfigured = $event->getConfig()->offsetGetByPath(
+        $existsingConfig = $event->getConfig()->offsetGetByPath(
             sprintf(self::ACTION_CONFIGURATION_KEY, MassUpdateActionHandler::ACTION_NAME),
-            true
+            false
         );
 
-        return $isNotConfigured && $isEntity && $isEnabled;
+        return empty($existsingConfig) && $isEntity && $isEnabled;
     }
 
     /**
@@ -101,12 +93,10 @@ class GridListener
                     'route'            => 'trustify_mass_update',
                     'route_parameters' => ['entityName' => str_replace('\\', '_', $this->entityName)],
                 ],
-                'data_identifier'     => 'e.'.$this->doctrineHelper->getSingleEntityIdentifierFieldName(
-                    $this->entityName
-                ),
+                'data_identifier'     => 'e.'.$this->doctrineHelper
+                        ->getSingleEntityIdentifierFieldName($this->entityName),
                 'handler'             => MassUpdateActionHandler::SERVICE_ID,
-                // TODO: ensure label used on frontend
-                'label'               => $this->translator->trans('trustify.mass_update.dialog.title'),
+                'label'               => 'trustify.mass_update.dialog.title',
                 'success_message'     => 'trustify.mass_update.success_message',
                 'error_message'       => 'trustify.mass_update.error_message',
             ]

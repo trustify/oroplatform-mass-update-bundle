@@ -70,12 +70,11 @@ class MassUpdateActionHandler implements MassActionHandlerInterface
      */
     public static function getEntityNameFromDatagrid(DatagridInterface $datagrid)
     {
-        /** @var OrmDatasource $dataSource */
-        $dataSource = $datagrid->getDatasource();
-
         $entityName = null;
         $fromItems = $datagrid->getConfig()->offsetGetByPath('[source][query][from]', false);
 
+        /** @var OrmDatasource $dataSource */
+        $dataSource = $datagrid->getDatasource();
         if ($dataSource) {
             /** @var QueryBuilder $queryBuilder */
             $queryBuilder = $dataSource->getQueryBuilder();

@@ -2,13 +2,20 @@ parameters: ~
 
 # to override services - use CompilerPass approach
 services:
+    trustify_mass_update.action_repository:
+        class: Trustify\Bundle\MassUpdateBundle\Datagrid\MassAction\ActionRepository
+        public: false
+        arguments:
+            - @oro_entity.doctrine_helper
+
     trustify_mass_update.mass_action.update_handler:
         class: Trustify\Bundle\MassUpdateBundle\Datagrid\MassAction\MassUpdateActionHandler
         arguments:
-            - @oro_entity.doctrine_helper
             - @oro_entity_config.provider.datagrid
             - @translator
             - @oro_security.security_facade
+            - @trustify_mass_update.action_repository
+            - @logger
 
     trustify_mass_update.event_listener.grid_listener:
         class: Trustify\Bundle\MassUpdateBundle\Datagrid\GridListener

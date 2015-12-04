@@ -181,8 +181,11 @@ define([
         },
 
         switchToSecondStep: function () {
-            // make this option writable again, against chaplin will
-            Object.defineProperty(this, 'frontend_handle', {writable: true});
+            // make this option writable again, against chaplin
+            if (this.hasOwnProperty('frontend_handle')) {
+                Object.defineProperty(this, 'frontend_handle', {writable: true});
+            }
+
             this.frontend_handle = 'ajax';
             this.frontend_options = this.stepOptions.second;
 

@@ -80,7 +80,9 @@ class GridListener
         if (empty($fromItems[0]['table'])) {
             return [$datagrid->getParameters()->get('class_name'), null];
         } else {
-            return [$fromItems[0]['table'], $fromItems[0]['alias']];
+            $alias = empty($fromItems[0]['alias']) ? null : $fromItems[0]['alias'];
+
+            return [$fromItems[0]['table'], $alias];
         }
     }
 

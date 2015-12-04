@@ -8,9 +8,6 @@ use Oro\Bundle\DataGridBundle\Datagrid\ParameterBag;
 use Oro\Bundle\DataGridBundle\Event\BuildBefore;
 use Oro\Bundle\EntityBundle\ORM\DoctrineHelper;
 use Oro\Bundle\EntityBundle\ORM\EntityClassResolver;
-use Oro\Bundle\EntityConfigBundle\Config\Config;
-use Oro\Bundle\EntityConfigBundle\Config\Id\EntityConfigId;
-use Oro\Bundle\EntityConfigBundle\Provider\ConfigProviderInterface;
 
 use Trustify\Bundle\MassUpdateBundle\Datagrid\GridListener;
 use Trustify\Bundle\MassUpdateBundle\Datagrid\MassAction\MassUpdateActionHandler;
@@ -26,8 +23,8 @@ class GridListenerTest extends \PHPUnit_Framework_TestCase
     /** @var DoctrineHelper|\PHPUnit_Framework_MockObject_MockObject */
     protected $doctrineHelperMock;
 
-    /** @var ConfigProviderInterface|\PHPUnit_Framework_MockObject_MockObject */
-    protected $configProviderMock;
+    /** @var MassUpdateActionHandler|\PHPUnit_Framework_MockObject_MockObject */
+    protected $handlerMock;
 
     protected function setUp()
     {
@@ -39,12 +36,14 @@ class GridListenerTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $this->configProviderMock = $this->getMock(ConfigProviderInterface::class);
+        $this->handlerMock = $this->getMockBuilder(MassUpdateActionHandler::class)
+            ->disableOriginalConstructor()
+            ->getMock();
 
         $this->listener = new GridListener(
             $this->classResolverMock,
             $this->doctrineHelperMock,
-            $this->configProviderMock
+            $this->handlerMock
         );
     }
 
@@ -59,7 +58,6 @@ class GridListenerTest extends \PHPUnit_Framework_TestCase
                 true,   // isEntity
                 false,  // isException
                 false,  // isAlreadyConfigured
-                true,   // hasConfig
                 true,   // isActionEnabled
                 // expected
                 [
@@ -82,7 +80,6 @@ class GridListenerTest extends \PHPUnit_Framework_TestCase
                 false,  // isEntity
                 true,   // isException
                 false,  // isAlreadyConfigured
-                true,   // hasConfig
                 true,   // isActionEnabled
             ],
             'not an entity' => [
@@ -90,7 +87,6 @@ class GridListenerTest extends \PHPUnit_Framework_TestCase
                 false,  // isEntity
                 false,  // isException
                 false,  // isAlreadyConfigured
-                true,   // hasConfig
                 true,   // isActionEnabled
             ],
             'entity is ok, but no entity config' => [
@@ -98,7 +94,6 @@ class GridListenerTest extends \PHPUnit_Framework_TestCase
                 true,   // isEntity
                 false,  // isException
                 false,  // isAlreadyConfigured
-                false,  // hasConfig
                 false,  // isActionEnabled
             ],
             'entity is ok, config exists but not action enabled' => [
@@ -106,7 +101,6 @@ class GridListenerTest extends \PHPUnit_Framework_TestCase
                 true,   // isEntity
                 false,  // isException
                 false,  // isAlreadyConfigured
-                true,   // hasConfig
                 false,  // isActionEnabled
             ],
             'entity is ok, action enabled, but already configured elsewhere' => [
@@ -114,7 +108,6 @@ class GridListenerTest extends \PHPUnit_Framework_TestCase
                 true,   // isEntity
                 false,  // isException
                 true,   // isAlreadyConfigured
-                true,   // hasConfig
                 true,   // isActionEnabled
                 ['action settings']
             ],
@@ -126,7 +119,6 @@ class GridListenerTest extends \PHPUnit_Framework_TestCase
      * @param bool       $isEntity
      * @param bool       $isException
      * @param bool       $isAlreadyConfigured
-     * @param bool       $hasConfig
      * @param bool       $isActionEnabled
      * @param array|null $expected
      *
@@ -137,7 +129,6 @@ class GridListenerTest extends \PHPUnit_Framework_TestCase
         $isEntity,
         $isException,
         $isAlreadyConfigured,
-        $hasConfig,
         $isActionEnabled,
         $expected = null
     ) {
@@ -161,24 +152,11 @@ class GridListenerTest extends \PHPUnit_Framework_TestCase
                     ->will($this->returnValue('id'));
             }
 
-            $this->configProviderMock->expects($this->once())
-                ->method('hasConfig')
+            $isEmptyAndEnabled = !$isAlreadyConfigured && $isEntity;
+            $this->handlerMock->expects($isEmptyAndEnabled ? $this->once() : $this->never())
+                ->method('isMassActionEnabled')
                 ->with($entityName)
-                ->will($this->returnValue($hasConfig));
-
-            if ($hasConfig) {
-                $this->configProviderMock->expects($this->once())
-                    ->method('getConfig')
-                    ->with($entityName)
-                    ->will(
-                        $this->returnValue(
-                            new Config(
-                                new EntityConfigId('entity', $entityName),
-                                ['update_mass_action_enabled' => $isActionEnabled]
-                            )
-                        )
-                    );
-            }
+                ->will($this->returnValue($isActionEnabled));
         }
 
         $event = new BuildBefore($datagrid, $datagrid->getConfig());

@@ -1,15 +1,15 @@
 Trustify Mass Update Extension
 ==============================
 
-How to enable Mass Update
+How to enable
 -------------------------
 
 This feature provides a way to mass edit entities, let’s say Contacts or Cases.
 
-To enable this feature for any entity you need to go to top level menu
+To enable this feature for an entity you need to go to top level menu
 System -> Entities -> Entity Management -> select some entity to edit -> find checkbox "Is Mass Update Action Enabled” on the page and check it to enable -> and then press "Save and Close” green button on top right corner.
 
-How to Use Mass Update
+How to Use
 ----------------------
 
 On the entity list (grid) page for the entity the feature was enabled for, you'll see checkboxes on each row. Select a few entities and on the top right corner of the grid you'll see a gear button, by pressing on it - you'll see available mass actions, one of them - "Bulk Edit".

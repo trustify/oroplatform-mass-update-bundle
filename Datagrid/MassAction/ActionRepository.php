@@ -14,7 +14,8 @@ use Oro\Bundle\EntityBundle\ORM\DoctrineHelper;
 
 class ActionRepository
 {
-    const FLUSH_BATCH_SIZE = 100;
+    /** @var int */
+    protected $batchSize = 100;
 
     /** @var DoctrineHelper */
     protected $doctrineHelper;
@@ -37,6 +38,18 @@ class ActionRepository
     public function __construct(DoctrineHelper $doctrineHelper)
     {
         $this->doctrineHelper = $doctrineHelper;
+    }
+
+    /**
+     * @param int $size
+     *
+     * @return ActionRepository
+     */
+    public function setBatchSize($size)
+    {
+        $this->batchSize = (int)$size;
+
+        return $this;
     }
 
     /**
@@ -89,12 +102,12 @@ class ActionRepository
 
                 $iteration++;
 
-                if ($iteration % self::FLUSH_BATCH_SIZE == 0) {
+                if ($iteration % $this->batchSize == 0) {
                     $entitiesCount += $this->finishBatch($selectedIds, $value);
                 }
             }
 
-            if ($iteration % self::FLUSH_BATCH_SIZE > 0) {
+            if ($iteration % $this->batchSize > 0) {
                 $entitiesCount += $this->finishBatch($selectedIds, $value);
             }
 

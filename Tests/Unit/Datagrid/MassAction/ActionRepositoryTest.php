@@ -32,7 +32,23 @@ class ActionRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->actionRepo = new ActionRepository($this->doctrineHelperMock);
     }
 
-    public function testBatchUpdateSuccess()
+    /**
+     * @return array
+     */
+    public function successProvider()
+    {
+        return [
+            'success with default batch size 100' => [null],
+            'success with custom batch size 2' => [2],
+        ];
+    }
+
+    /**
+     * @dataProvider successProvider
+     *
+     * @throws \Exception
+     */
+    public function testBatchUpdateSuccess($batchSize)
     {
         /** @var MassActionInterface|\PHPUnit_Framework_MockObject_MockObject $massActionMock */
         $massActionMock = $this->getMock(MassActionInterface::class);
@@ -58,6 +74,9 @@ class ActionRepositoryTest extends \PHPUnit_Framework_TestCase
             ->with($entityName)
             ->will($this->returnValue($this->getEntityManagerMock(true, 2)));
 
+        if ($batchSize) {
+            $this->actionRepo->setBatchSize($batchSize);
+        }
         $entitiesCount = $this->actionRepo->batchUpdate($massActionMock, $iteratorMock, $data);
 
         $this->assertEquals(2, $entitiesCount, 'Failed asserting that entities count match');

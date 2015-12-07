@@ -14,7 +14,8 @@ use Oro\Bundle\EntityBundle\ORM\DoctrineHelper;
 
 class ActionRepository
 {
-    const FLUSH_BATCH_SIZE = 100;
+    /** @var int */
+    protected $batchSize = 100;
 
     /** @var DoctrineHelper */
     protected $doctrineHelper;
@@ -37,6 +38,18 @@ class ActionRepository
     public function __construct(DoctrineHelper $doctrineHelper)
     {
         $this->doctrineHelper = $doctrineHelper;
+    }
+
+    /**
+     * @param int $size
+     *
+     * @return ActionRepository
+     */
+    public function setBatchSize($size)
+    {
+        $this->batchSize = (int)$size;
+
+        return $this;
     }
 
     /**
@@ -65,7 +78,11 @@ class ActionRepository
     public function batchUpdate(MassActionInterface $massAction, IterableResultInterface $results, array $data)
     {
         $this->entityName     = $massAction->getOptions()->offsetGet('entityName');
-        $this->fieldName      = $data['mass_edit_field'];
+        $this->fieldName      = empty($data['mass_edit_field']) ? null : $data['mass_edit_field'];
+        if (empty($this->fieldName)) {
+            throw new \RuntimeException("Field name was not specified with option 'mass_edit_field'");
+        }
+
         $this->identifierName = $this->doctrineHelper->getSingleEntityIdentifierFieldName($this->entityName);
         $value                = $data[$this->fieldName];
 
@@ -85,12 +102,12 @@ class ActionRepository
 
                 $iteration++;
 
-                if ($iteration % self::FLUSH_BATCH_SIZE == 0) {
+                if ($iteration % $this->batchSize == 0) {
                     $entitiesCount += $this->finishBatch($selectedIds, $value);
                 }
             }
 
-            if ($iteration % self::FLUSH_BATCH_SIZE > 0) {
+            if ($iteration % $this->batchSize > 0) {
                 $entitiesCount += $this->finishBatch($selectedIds, $value);
             }
 

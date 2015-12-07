@@ -171,6 +171,24 @@ class GridListenerTest extends \PHPUnit_Framework_TestCase
         );
     }
 
+    public function testIsApplicableFalse()
+    {
+        $config = DatagridConfiguration::create([]);
+
+        $datagrid = new Datagrid('test', $config, new ParameterBag());
+
+        $event = new BuildBefore($datagrid, $datagrid->getConfig());
+        $this->listener->onBuildBefore($event);
+
+        $this->assertEquals(
+            null,
+            $event->getConfig()->offsetGetByPath(
+                sprintf(GridListener::ACTION_CONFIGURATION_KEY, MassUpdateActionHandler::ACTION_NAME)
+            ),
+            'Failed asserting that mass action was not configured'
+        );
+    }
+
     /**
      * @param string $entityName
      * @param bool   $isAlreadyConfigured

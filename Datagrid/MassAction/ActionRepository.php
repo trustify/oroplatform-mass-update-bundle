@@ -65,7 +65,11 @@ class ActionRepository
     public function batchUpdate(MassActionInterface $massAction, IterableResultInterface $results, array $data)
     {
         $this->entityName     = $massAction->getOptions()->offsetGet('entityName');
-        $this->fieldName      = $data['mass_edit_field'];
+        $this->fieldName      = empty($data['mass_edit_field']) ? null : $data['mass_edit_field'];
+        if (empty($this->fieldName)) {
+            throw new \RuntimeException("Field name was not specified with option 'mass_edit_field'");
+        }
+
         $this->identifierName = $this->doctrineHelper->getSingleEntityIdentifierFieldName($this->entityName);
         $value                = $data[$this->fieldName];
 

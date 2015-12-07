@@ -4,6 +4,7 @@ namespace Trustify\Bundle\MassUpdateBundle\Datagrid\MassAction;
 
 use Symfony\Component\Translation\TranslatorInterface;
 
+use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -14,7 +15,7 @@ use Oro\Bundle\DataGridBundle\Extension\MassAction\MassActionHandlerInterface;
 use Oro\Bundle\DataGridBundle\Extension\MassAction\MassActionResponse;
 use Oro\Bundle\EntityConfigBundle\Provider\ConfigProviderInterface;
 
-class MassUpdateActionHandler implements MassActionHandlerInterface
+class MassUpdateActionHandler implements MassActionHandlerInterface, LoggerAwareInterface
 {
     const SERVICE_ID  = 'trustify_mass_update.mass_action.update_handler';
     const ACTION_NAME = 'mass_update';
@@ -42,20 +43,18 @@ class MassUpdateActionHandler implements MassActionHandlerInterface
      * @param TranslatorInterface     $translator
      * @param SecurityFacade          $securityFacade
      * @param ActionRepository        $actionRepository
-     * @param LoggerInterface         $logger
      */
     public function __construct(
         ConfigProviderInterface $gridConfigProvider,
         TranslatorInterface $translator,
         SecurityFacade $securityFacade,
-        ActionRepository $actionRepository,
-        LoggerInterface $logger = null
+        ActionRepository $actionRepository
     ) {
         $this->gridConfigProvider = $gridConfigProvider;
         $this->translator = $translator;
         $this->securityFacade = $securityFacade;
         $this->actionRepository = $actionRepository;
-        $this->logger = $logger ?: new NullLogger();
+        $this->logger = new NullLogger();
     }
 
     /**
@@ -65,20 +64,21 @@ class MassUpdateActionHandler implements MassActionHandlerInterface
      */
     public function isMassActionEnabled($entityName)
     {
-        $result = true;
-
+        $isEnabled = false;
         if ($entityName && $this->gridConfigProvider->hasConfig($entityName)) {
+            $isEnabled = $this->gridConfigProvider->getConfig($entityName)->is('update_mass_action_enabled');
+        } else {
             $this->logger->debug("Update Mass Action: not configured for " . $entityName);
-
-            $result = $this->gridConfigProvider->getConfig($entityName)->is('update_mass_action_enabled');
         }
 
-        if ($result && !$this->securityFacade->isGranted('EDIT', 'entity:' . $entityName)) {
+        if ($isEnabled && $this->securityFacade->isGranted('EDIT', 'entity:' . $entityName)) {
+            $isEnabled = true;
+        } elseif ($isEnabled) {
             $this->logger->debug("Update Mass Action: not allowed to modify the entity of class " . $entityName);
-            $result = false;
+            $isEnabled = false;
         }
 
-        return $result;
+        return $isEnabled;
     }
 
     /**
@@ -90,7 +90,7 @@ class MassUpdateActionHandler implements MassActionHandlerInterface
 
         $entityName = $this->actionRepository->getEntityName($args->getDatagrid());
         if (!$this->isMassActionEnabled($entityName)) {
-            return $this->getResponse($massAction, 0, 'Action not configured');
+            return $this->getResponse($massAction, 0, 'Action not configured or not allowed');
         }
 
         $massAction->getOptions()->offsetSet('entityName', $entityName);
@@ -116,5 +116,13 @@ class MassUpdateActionHandler implements MassActionHandlerInterface
             $this->translator->trans($options['error_message'], ['%error%' => $error]);
 
         return new MassActionResponse($successful, $message);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
     }
 }

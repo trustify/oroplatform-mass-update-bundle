@@ -15,7 +15,8 @@ services:
             - @translator
             - @oro_security.security_facade
             - @trustify_mass_update.action_repository
-            - @logger
+        calls:
+            - [setLogger, [@logger]]
 
     trustify_mass_update.event_listener.grid_listener:
         class: Trustify\Bundle\MassUpdateBundle\Datagrid\GridListener

@@ -34,6 +34,7 @@ class MassUpdateController extends Controller
 
         if ($selectedField) {
             // uncomment this after oro platform will support field level acl
+            // cause without field level acl it will always "forbidden"
             //$this->checkFieldAccess($entityName, $selectedField);
 
             $form = $this->get('form.factory')->createNamed(

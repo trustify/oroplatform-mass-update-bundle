@@ -110,7 +110,8 @@ class MassUpdateActionHandler implements MassActionHandlerInterface, LoggerAware
     {
         $options = $massAction->getOptions()->toArray();
 
-        $successful = $entitiesCount > 0;
+        $successful = $entitiesCount > 0 || empty($error);
+
         $message    = $successful ?
             $this->translator->trans($options['success_message'], ['%items%' => $entitiesCount]) :
             $this->translator->trans($options['error_message'], ['%error%' => $error]);

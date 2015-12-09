@@ -5,6 +5,8 @@ namespace Trustify\Bundle\MassUpdateBundle\DependencyInjection;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
+use Oro\Bundle\ConfigBundle\DependencyInjection\SettingsBuilder;
+
 class Configuration implements ConfigurationInterface
 {
     /**
@@ -36,6 +38,13 @@ class Configuration implements ConfigurationInterface
                     ->end()
                 ->end()
             ->end();
+
+        SettingsBuilder::append(
+            $rootNode,
+            [
+                'field_acl_enabled' => ['type' => 'boolean', 'value' => false],
+            ]
+        );
 
         return $treeBuilder;
     }

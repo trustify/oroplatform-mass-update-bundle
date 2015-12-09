@@ -32,12 +32,12 @@ class MassUpdateController extends Controller
             throw new AccessDeniedException();
         }
 
+        // form submission handled by Oro\Bundle\DataGridBundle\Controller\GridController::massActionAction
+        $formFactory = $this->get('form.factory');
         if ($selectedField) {
-            // uncomment this after oro platform will support field level acl
-            // cause without field level acl it will always "forbidden"
-            //$this->checkFieldAccess($entityName, $selectedField);
+            $this->checkFieldAccess($entityName, $selectedField);
 
-            $form = $this->get('form.factory')->createNamed(
+            $form = $formFactory->createNamed(
                 '',
                 GuessFieldType::NAME,
                 null,
@@ -49,7 +49,7 @@ class MassUpdateController extends Controller
                 ]
             );
         } else {
-            $form = $this->get('form.factory')->createNamed(
+            $form = $formFactory->createNamed(
                 'mass_edit_field',
                 UpdateFieldChoiceType::NAME,
                 null,
@@ -74,6 +74,10 @@ class MassUpdateController extends Controller
      */
     protected function checkFieldAccess($entityName, $fieldName)
     {
+        if (!$this->get('oro_config.manager')->get('trustify_mass_update.field_acl_enabled')) {
+            return;
+        }
+
         if (!$this->get('oro_security.security_facade')->isGranted(
             'EDIT',
             new FieldVote(

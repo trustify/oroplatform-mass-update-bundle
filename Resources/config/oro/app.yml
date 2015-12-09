@@ -1,4 +1,14 @@
 trustify_mass_update:
+    # enable only when platform will support it
+    # otherwise user won't be able to select field to update and perform actual update
+    # MassUpdateController will return 403 in such case
+    #
+    # Note: Without field level acl it will always "forbidden"
+    # default value = false
+
+#    settings:
+#        field_acl_enabled: false
+
     # Name based mapping used to set form type and options to use
     # for rendering updateable field, used only for mass action dialog window
     mapping:

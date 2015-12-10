@@ -1,0 +1,6 @@
+{
+  "name": "trustify/oroplatform-mass-update-bundle",
+  "description": "OroPlatform mass update action for entity grids.",
+  "homepage": "https://github.com/trustify/oroplatform-mass-update-bundle.git",
+  "license": "MIT"
+}

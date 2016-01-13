@@ -1,6 +1,19 @@
 {
   "name": "trustify/oroplatform-mass-update-bundle",
-  "type": "symfony-bundle",
+  "type": "oro/platform extension",
+  "authors": [
+    {
+      "name": "Trustify",
+      "homepage": "https://www.trustify.info/",
+      "role": "Company"
+    },
+    {
+      "name": "Ivan Shakuta",
+      "email": "ishakuta@gmail.com",
+      "homepage": "https://ua.linkedin.com/in/ishakuta",
+      "role": "Developer"
+    }
+  ],
   "description": "OroPlatform mass update action for entity grids.",
   "homepage": "https://github.com/trustify/oroplatform-mass-update-bundle.git",
   "license": "MIT",

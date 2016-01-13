@@ -1,6 +1,30 @@
 {
   "name": "trustify/oroplatform-mass-update-bundle",
+  "type": "symfony-bundle",
   "description": "OroPlatform mass update action for entity grids.",
   "homepage": "https://github.com/trustify/oroplatform-mass-update-bundle.git",
-  "license": "MIT"
+  "license": "MIT",
+  "keywords": [
+    "mass update",
+    "bulk edit",
+    "datagrid"
+  ],
+  "autoload": {
+    "psr-0": {
+      "Trustify\\Bundle\\MassUpdateBundle": "./"
+    }
+  },
+  "target-dir": "Trustify/Bundle/MassUpdateBundle",
+  "require": {
+    "php": ">=5.4.9",
+    "oro/platform": ">=1.7"
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "http://packagist.orocrm.com"
+    }
+  ]
 }

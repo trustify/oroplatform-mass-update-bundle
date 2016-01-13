@@ -14,8 +14,7 @@ use Oro\Bundle\EntityConfigBundle\Config\Id\FieldConfigId;
 use Oro\Bundle\EntityMergeBundle\EventListener\Metadata\EntityConfigHelper;
 use Oro\Bundle\FormBundle\Form\Type\OroDateTimeType;
 use Oro\Bundle\FormBundle\Form\Type\OroDateType;
-
-use OroCRM\Bundle\CaseBundle\Entity\CaseEntity;
+use Oro\Bundle\UserBundle\Entity\User;
 
 use Trustify\Bundle\MassUpdateBundle\Form\Type\GuessFieldType;
 
@@ -71,7 +70,7 @@ class GuessFieldTypeTest extends TypeTestCase
 
     public function testBuildFormRegularGuesser()
     {
-        $entityName   = CaseEntity::class;
+        $entityName   = User::class;
         $fieldName    = 'createdAt';
         $expectedType = 'oro_datetime';
 
@@ -120,7 +119,7 @@ class GuessFieldTypeTest extends TypeTestCase
 
     public function testBuildFormExtendGuesser()
     {
-        $entityName   = CaseEntity::class;
+        $entityName   = User::class;
         $fieldName    = 'orderPlacedAt'; // pretend that it is extend field
         $expectedType = 'oro_datetime';
 
@@ -173,7 +172,7 @@ class GuessFieldTypeTest extends TypeTestCase
             ],
             'specific mapping' => [
                 [
-                    CaseEntity::class => [
+                    User::class => [
                         'someCustomField' => [
                             'type'    => 'oro_datetime',
                             'options' => []
@@ -191,7 +190,7 @@ class GuessFieldTypeTest extends TypeTestCase
      */
     public function testBuildFormMappingUsed(array $mapping)
     {
-        $entityName   = CaseEntity::class;
+        $entityName   = User::class;
         $fieldName    = 'someCustomField';
         $expectedType = 'oro_datetime';
 

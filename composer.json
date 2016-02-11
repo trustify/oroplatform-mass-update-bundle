@@ -1,6 +1,5 @@
 {
   "name": "trustify/oroplatform-mass-update-bundle",
-  "type": "oro/platform extension",
   "authors": [
     {
       "name": "Trustify",

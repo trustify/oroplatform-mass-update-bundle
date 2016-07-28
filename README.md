@@ -26,7 +26,7 @@ For extended fields it's done automatically based on their 'extend type', but fo
  * Use form scope of Entity Configuration (in such case that entity's field will always be rendered with corresponding form type, system-wide)
  
     According to [EntityExtendBundle](https://github.com/orocrm/platform/tree/master/src/Oro/Bundle/EntityExtendBundle#modify-existing-entity) documentation and 
-    [exampe with oro options](https://github.com/orocrm/platform/blob/master/src/Oro/Bundle/EntityExtendBundle/Resources/doc/custom_form_type.md#using-annotation-to-field-or-related-entity-if-extended-field-is-a-relation), 
+    [example with oro options](https://github.com/orocrm/platform/blob/master/src/Oro/Bundle/EntityExtendBundle/Resources/doc/custom_form_type.md#using-annotation-to-field-or-related-entity-if-extended-field-is-a-relation), 
     where under oro_options it's possible to define system-wide form_type and form_option for some entity's field.
     
     *Note*: This works only if entity is configurable.

@@ -1,9 +1,9 @@
-parameters: ~
+parameters:
+    trustify_mass_update.action_repository.class: Trustify\Bundle\MassUpdateBundle\Datagrid\MassAction\ActionRepository
 
-# to override services - use CompilerPass approach
 services:
     trustify_mass_update.action_repository:
-        class: Trustify\Bundle\MassUpdateBundle\Datagrid\MassAction\ActionRepository
+        class: %trustify_mass_update.action_repository.class%
         public: false
         arguments:
             - @oro_entity.doctrine_helper

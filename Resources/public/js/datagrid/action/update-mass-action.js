@@ -129,7 +129,7 @@ define([
                     params[actionParams[i].name] = actionParams[i].value;
                 }
                 massAction.route_parameters = _.extend(massAction.route_parameters, params);
-                massAction.run();
+                massAction.run({});
 
                 this.remove();
             };
@@ -211,7 +211,7 @@ define([
             var maxLength = this.max_element_count;
             var selectionState = this.datagrid.getSelectionState();
             var isInset = selectionState.inset;
-            var length = Object.keys(selectionState.selectedModels).length;
+            var length = selectionState.selectedIds.length;
 
             if (!isInset) {
                 totalRecords = this.datagrid.collection.state.totalRecords;

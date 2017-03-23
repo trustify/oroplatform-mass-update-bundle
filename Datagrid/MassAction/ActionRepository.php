@@ -3,6 +3,9 @@
 namespace Trustify\Bundle\MassUpdateBundle\Datagrid\MassAction;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Event\LifecycleEventArgs;
+use Doctrine\ORM\Event\PreUpdateEventArgs;
+use Doctrine\ORM\Events;
 use Doctrine\ORM\QueryBuilder;
 
 use Oro\Bundle\DataGridBundle\Datasource\Orm\IterableResultInterface;
@@ -11,6 +14,7 @@ use Oro\Bundle\DataGridBundle\Datagrid\DatagridInterface;
 use Oro\Bundle\DataGridBundle\Datasource\Orm\OrmDatasource;
 use Oro\Bundle\DataGridBundle\Datasource\ResultRecordInterface;
 use Oro\Bundle\EntityBundle\ORM\DoctrineHelper;
+use Oro\Component\PropertyAccess\PropertyAccessor;
 
 class ActionRepository
 {
@@ -128,15 +132,55 @@ class ActionRepository
      */
     protected function finishBatch(array &$selectedIds, $value)
     {
+        // first initiate preUpdate event for batch
         $qBuilder = $this->entityManager->createQueryBuilder();
+        $entities = $qBuilder->from($this->entityName, 'e')
+            ->select('e')
+            ->where($qBuilder->expr()->in('e.' . $this->identifierName, $selectedIds))
+            ->getQuery()
+            ->getResult();
 
+        $eventManager = $this->entityManager->getEventManager();
+        $propAccessor = new PropertyAccessor();
+
+
+        $metadata = $this->doctrineHelper->getEntityMetadata($this->entityName);
+        if ($metadata->hasAssociation($this->fieldName)) {
+            $relClass = $metadata->getAssociationTargetClass($this->fieldName);
+            $value = $this->entityManager->getReference($relClass, $value);
+        }
+
+        foreach ($entities as $entity) {
+            $old = $propAccessor->getValue($entity, $this->fieldName);
+            $changeSet = [$this->fieldName => [$old, $value]];
+
+            $this->entityManager->getUnitOfWork()->propertyChanged($entity, $this->fieldName, $old, $value);
+            //$propAccessor->setValue($entity, $this->fieldName, $value);
+
+            $eventManager->dispatchEvent(
+                Events::preUpdate,
+                new PreUpdateEventArgs($entity, $this->entityManager, $changeSet)
+            );
+        }
+
+        // perform mass update
+        $qBuilder = $this->entityManager->createQueryBuilder();
         $entitiesCount = $qBuilder->update($this->entityName, 'e')
             ->set('e.'.$this->fieldName, ':value')
-            ->where($qBuilder->expr()->in('e.'.$this->identifierName, $selectedIds))
+            ->where($qBuilder->expr()->in('e.' . $this->identifierName, $selectedIds))
             ->getQuery()
             ->setParameter('value', $value)
             ->execute();
 
+        foreach ($entities as $entity) {
+            $eventManager->dispatchEvent(
+                Events::postUpdate,
+                new LifecycleEventArgs($entity, $this->entityManager)
+            );
+        }
+
+        // TODO: ensure Processes and DataAudit listeners are able to 'see' mass-update changes
+        // right now it doesn't work
         $this->entityManager->flush();
         if ($this->entityManager->getConnection()->getTransactionNestingLevel() == 1) {
             $this->entityManager->clear();
